@@ -11,8 +11,8 @@ Unfortunately, the corridors between the rooms can only fit so many bunnies at a
 corridors were resized to accommodate the LAMBCHOP, so they vary in how many bunnies can move through them at a time.
 
 Given the starting room numbers of the groups of bunnies, the room numbers of the escape pods, and how many bunnies can
-fit through at a time in each direction of every corridor in between, figure out how many bunnies can safely make it to
-the escape pods at a time at peak.
+fit through at a time in each direction of every corridor in between,
+==> figure out how many bunnies can safely make it to the escape pods at a time at peak. <==
 
 Write a function solution(entrances, exits, path) that takes an array of integers denoting where the groups of gathered
 bunnies are, an array of integers denoting where the escape pods are located, and an array of an array of integers of
@@ -39,7 +39,7 @@ Then in each time step, the following might happen:
 2 sends 4/4 bunnies to 4 and 4/4 bunnies to 5
 3 sends 4/6 bunnies to 4 and 4/6 bunnies to 5
 
-So, in total, 16 bunnies could make it to the escape pods at 4 and 5 at each time step.  (Note that in this example,
+So, in total, 16 bunnies could make it to the escape pods at 4 and 5 at each time step. (Note that in this example,
 room 3 could have sent any variation of 8 bunnies to 4 and 5, such as 2/6 and 6/6, but the final solution remains the
 same.)
 """
@@ -51,22 +51,21 @@ def solution(entrances, exits, path):
     # start with max bunnies in entrance rooms and 0 elsewhere.
     bunny_count = [0] * len(path)
     for entrance_room in entrances:
-        bunny_count[entrance_room] = max_capacity
-    # todo, figure out which rooms to go from.
+        bunny_count[entrance_room] = float('inf')
     visited_rooms = set(exits)
     non_exit_rooms = list(entrances)
     while non_exit_rooms:
         from_room = non_exit_rooms[0]
         non_exit_rooms.remove(from_room)
         if from_room not in visited_rooms and bunny_count[from_room]:
+            visited_rooms.add(from_room)  # mark that I've been here before, so don't return.
             for to_room, corridor_capacity in enumerate(path[from_room]):
-                if corridor_capacity:
+                if from_room != to_room and corridor_capacity:
                     # bunnies can travel!
                     # move bunnies to new room.
-                    bunnies_able_to_travel = min(corridor_capacity, bunny_count[from_room])
-                    bunny_count[to_room] = min(bunny_count[to_room] + bunnies_able_to_travel, max_capacity)
+                    bunnies_able_to_travel = min(corridor_capacity, bunny_count[from_room], max_capacity)
+                    bunny_count[to_room] += bunnies_able_to_travel
                     bunny_count[from_room] -= bunnies_able_to_travel
-                    visited_rooms.add(from_room)  # mark that I've been here before, so don't return.
                     non_exit_rooms.append(to_room)  # go to the next room i just added bunnies to.
 
     bunnies_saved = 0
@@ -107,21 +106,53 @@ def test():
          [9, 0]]
     ) == 2*10**6
     assert solution(
+        [2],
+        [5],
+        [[0, 0, 4, 6, 0, 0],
+         [0, 0, 5, 2, 0, 0],
+         [0, 0, 0, 0, 4, 4],
+         [0, 0, 0, 0, 6, 6],
+         [0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0]]
+    ) == 4
+    assert solution(
         [3],
         [0],
-        [[0, 7, 0, 0],
-         [0, 0, 6, 0],
-         [0, 0, 0, 8],
-         [9, 0, 0, 0]]
-    ) == 9
+        [[0, 0, 4, 6, 0, 0],
+         [0, 0, 5, 2, 0, 0],
+         [0, 0, 0, 0, 4, 4],
+         [0, 0, 0, 0, 6, 6],
+         [0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0]]
+    ) == 0
     assert solution(
-        [1],
-        [0, 3],
-        [[0, 7, 0, 0],
-         [100, 0, 6, 0],
-         [0, 0, 0, 8],
-         [9, 0, 0, 0]]
-    ) == 106
+        [3],
+        [0],
+        [[0, 0, 4, 6, 0, 0],
+         [0, 0, 5, 2, 5, 0],
+         [0, 0, 0, 0, 4, 4],
+         [0, 0, 0, 0, 6, 6],
+         [3, 0, 0, 0, 0, 0],
+         [0, 10, 0, 0, 0, 0]]
+    ) == 3
+    assert solution(
+        [0, 5],
+        [2],
+        [[0, 9,   4, 6,  0, 0],  # entrance
+         [0, 0, 100, 2,  5, 0],
+         [0, 0,   0, 0,  4, 4],  # exit
+         [0, 0,   0, 0,  6, 6],
+         [3, 0,   15, 0,  0, 0],
+         [0, 7,   3, 0, 20, 0]]  # entrance
+    ) == 9 + 4 + 7 + 3 + 15
+    assert solution(
+        [0],
+        [3],
+        [[0, 2*10**6, 2*10**6, 0],  # entrance
+         [0, 0, 0, 2*10**6],
+         [0, 0, 0, 2*10**6],
+         [0, 0, 0, 0]]  # exit
+    ) == (2*10**6)*2
 
 
 if __name__ == '__main__':
