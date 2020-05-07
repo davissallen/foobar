@@ -42,23 +42,28 @@ Then in each time step, the following might happen:
 So, in total, 16 bunnies could make it to the escape pods at 4 and 5 at each time step.  (Note that in this example,
 room 3 could have sent any variation of 8 bunnies to 4 and 5, such as 2/6 and 6/6, but the final solution remains the
 same.)
-
--- Python cases --
-Input:
-solution.solution([0], [3], [[0, 7, 0, 0], [0, 0, 6, 0], [0, 0, 0, 8], [9, 0, 0, 0]])
-Output:
-    6
-
-Input:
-solution.solution([0, 1], [4, 5], [[0, 0, 4, 6, 0, 0], [0, 0, 5, 2, 0, 0], [0, 0, 0, 0, 4, 4], [0, 0, 0, 0, 6, 6], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]])
-Output:
-    16
 """
 import timeit
 
 
 def solution(entrances, exits, path):
-    pass
+    max_capacity = 2*10**6  # 2 million, the max capacity for a room.
+    # start with max bunnies in entrance rooms and 0 elsewhere.
+    bunny_count = [0] * len(path)
+    for entrance_room in entrances:
+        bunny_count[entrance_room] = max_capacity
+    for from_room in range(len(path) - len(exits)):
+        for to_room, corridor_capacity in enumerate(path[from_room]):
+            if corridor_capacity != 0:
+                # bunnies can travel!
+                # move bunnies to new room.
+                bunnies_able_to_travel = min(corridor_capacity, bunny_count[from_room])
+                bunny_count[to_room] = min(bunny_count[to_room] + bunnies_able_to_travel, max_capacity)
+                bunny_count[from_room] -= bunnies_able_to_travel
+    bunnies_saved = 0
+    for exit_room in exits:
+        bunnies_saved += bunny_count[exit_room]
+    return bunnies_saved
 
 
 def test():
