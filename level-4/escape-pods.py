@@ -88,4 +88,5 @@ def test():
 
 
 if __name__ == '__main__':
-    timeit.timeit(stmt='test()', setup='from __main__ import test', number=1)
+    ms = timeit.timeit(stmt='test()', setup='from __main__ import test', number=1000) * 1000
+    print '{:.2f} ms'.format(ms)
