@@ -75,7 +75,7 @@ def solution_old(entrances, exits, path):
 
 
 ####################################################################################
-
+# new, improved solution below to handle loops and path prioritization
 
 max_capacity = 2 * 10 ** 6  # 2 million
 
