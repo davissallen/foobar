@@ -46,8 +46,8 @@ same.)
 import timeit
 
 
-def solution(entrances, exits, path):
-    max_capacity = 2*10**6  # 2 million, the max capacity for a room.
+def solution_old(entrances, exits, path):
+    max_capacity = 2 * 10 ** 6  # 2 million, the max capacity for a room.
     # start with max bunnies in entrance rooms and 0 elsewhere.
     bunny_count = [0] * len(path)
     for entrance_room in entrances:
@@ -72,6 +72,34 @@ def solution(entrances, exits, path):
     for exit_room in exits:
         bunnies_saved += bunny_count[exit_room]
     return bunnies_saved
+
+
+####################################################################################
+
+
+max_capacity = 2 * 10 ** 6  # 2 million
+
+
+def helper(corridors, exits, bunnies_in_room, current_room):
+    if current_room not in bunnies_in_room:
+        bunnies_in_room[current_room] = 0
+        feeder_rooms = list(set([row for row in range(len(corridors)) if corridors[row][current_room] > 0]) - exits)
+        feeder_rooms.sort(key=lambda x: corridors[x][current_room], reverse=True)
+        for feeder_room in feeder_rooms:
+            corridor_size = corridors[feeder_room][current_room]
+            bunnies_to_give = min(helper(corridors, exits, bunnies_in_room, feeder_room), corridor_size, max_capacity)
+            bunnies_in_room[feeder_room] -= bunnies_to_give
+            bunnies_in_room[current_room] += bunnies_to_give
+    return bunnies_in_room[current_room]
+
+
+def solution(entrances, exits, path):
+    bunnies_in_room = {room: float('inf') for room in entrances}
+    bunny_count = 0
+    exits = set(exits)
+    for exit_room in exits:
+        bunny_count += helper(path, exits, bunnies_in_room, exit_room)
+    return bunny_count
 
 
 def test():
@@ -102,9 +130,9 @@ def test():
     assert solution(
         [0],
         [1],
-        [[0, 2*10**7],
+        [[0, 2 * 10 ** 7],
          [9, 0]]
-    ) == 2*10**6
+    ) == 2 * 10 ** 6
     assert solution(
         [2],
         [5],
@@ -138,21 +166,51 @@ def test():
     assert solution(
         [0, 5],
         [2],
-        [[0, 9,   4, 6,  0, 0],  # entrance
-         [0, 0, 100, 2,  5, 0],
-         [0, 0,   0, 0,  4, 4],  # exit
-         [0, 0,   0, 0,  6, 6],
-         [3, 0,   15, 0,  0, 0],
-         [0, 7,   3, 0, 20, 0]]  # entrance
-    ) == 9 + 4 + 7 + 3 + 15
+        [[0, 9, 4, 6, 0, 0],  # entrance
+         [0, 0, 100, 2, 5, 0],
+         [0, 0, 0, 0, 4, 4],  # exit
+         [0, 0, 0, 0, 6, 6],
+         [3, 0, 15, 0, 0, 0],
+         [0, 7, 3, 0, 20, 0]]  # entrance
+    ) == 38
     assert solution(
         [0],
         [3],
-        [[0, 2*10**6, 2*10**6, 0],  # entrance
-         [0, 0, 0, 2*10**6],
-         [0, 0, 0, 2*10**6],
+        [[0, 2 * 10 ** 6, 2 * 10 ** 6, 0],  # entrance
+         [0, 0, 0, 2 * 10 ** 6],
+         [0, 0, 0, 2 * 10 ** 6],
          [0, 0, 0, 0]]  # exit
-    ) == (2*10**6)*2
+    ) == (2 * 10 ** 6) * 2
+    assert solution(
+        [0],
+        [5],
+        [[1, 1, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 4],
+         [0, 0, 0, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0]]
+    ) == 3
+    assert solution(
+        [0],
+        [5],
+        [[0, 1, 0, 1, 1, 0],
+         [1, 0, 0, 0, 0, 4],
+         [0, 0, 0, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0]]
+    ) == 3
+    assert solution(
+        [0],
+        [5],
+        [[0, 5, 0, 0, 0, 0],
+         [0, 0, 3, 5, 0, 0],
+         [0, 0, 0, 0, 0, 1],
+         [0, 0, 0, 0, 0, 5],
+         [0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0]]
+    ) == 5
 
 
 if __name__ == '__main__':
