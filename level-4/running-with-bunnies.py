@@ -30,12 +30,12 @@ bunnies are represented as a sorted list by prisoner ID, with the first bunny be
 time_limit is a non-negative integer that is at most 999.
 
 For instance, in the case of
-[
-  [0, 2, 2, 2, -1],  # 0 = Start
-  [9, 0, 2, 2, -1],  # 1 = Bunny 0
-  [9, 3, 0, 2, -1],  # 2 = Bunny 1
-  [9, 3, 2, 0, -1],  # 3 = Bunny 2
-  [9, 3, 2, 2,  0],  # 4 = Bulkhead
+[  #0  #1  #2  #3   #4
+  [ 0,  2,  2,  2,  -1],  #0 = Start
+  [ 9,  0,  2,  2,  -1],  #1 = Bunny 0
+  [ 9,  3,  0,  2,  -1],  #2 = Bunny 1
+  [ 9,  3,  2,  0,  -1],  #3 = Bunny 2
+  [ 9,  3,  2,  2,   0],  #4 = Bulkhead
 ]
 and a time limit of 1, the five inner array rows designate the starting point, bunny 0, bunny 1, bunny 2, and the
 bulkhead door exit respectively. You could take the path:
@@ -64,7 +64,50 @@ Output:
 """
 
 
+def has_negative_cycle(graph):
+    d = [float('inf') for _ in xrange(len(graph))]
+    d[0] = 0
+    for i in xrange(len(graph)):
+        flag = False
+        for u in xrange(len(graph)):
+            for v in xrange(len(graph)):
+                if d[u] + graph[u][v] < d[v]:
+                    d[v] = d[u] + graph[u][v]
+                    flag = True
+        if flag:
+            break
+    for u in xrange(len(graph)):
+        for v in xrange(len(graph)):
+            if d[u] + graph[u][v] < d[v]:
+                return True
+    return False
+
+
+def helper(times, time_remaining, from_room, rooms_visited):
+    """rooms_visited, a set, will also act as the bunny counter with len()."""
+    pass
+
+
 def solution(times, time_limit):
+    """explore all situations"""
+
+    # look for negative cycles.
+    # if there are negative cycles, return all the bunnies.
+    if has_negative_cycle(times):
+        return range(1, len(times) - 1)
+
+    # base case.
+    # if no negative loops and time limit is <= 0, i can get no bunnies.
+    # if there are no negative cycles, continue.
+    if time_limit <= 0:
+        return []
+
+    # want to know: fastest route to exit for every room.
+    # this will help me make my quitting decision... i think.
+    # for that I can use the bellman-ford algorithm.
+    pass
+
+    # explore all possible paths, choosing the next path greedily.
     pass
 
 
@@ -73,23 +116,31 @@ def test():
 
 
 if __name__ == '__main__':
-    assert solution(
-        [
+
+    cases = [
+        ([
             [0, 2, 2, 2, -1],
             [9, 0, 2, 2, -1],
             [9, 3, 0, 2, -1],
             [9, 3, 2, 0, -1],
             [9, 3, 2, 2,  0]
-        ],
-        1
-    ) == [1, 2]
-    assert solution(
-        [
+        ], 1, [1, 2], False),
+        ([
             [0, 1, 1, 1, 1],
             [1, 0, 1, 1, 1],
             [1, 1, 0, 1, 1],
             [1, 1, 1, 0, 1],
             [1, 1, 1, 1, 0]
-        ],
-        1
-    ) == [0, 1]
+        ], 3, [0, 1], False),
+        ([
+            [0, 1, 1, 1, 1],
+            [1, 0, 1, -5, 1],
+            [1, 1, 0, 1, 1],
+            [1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 0]
+        ], 2, [1, 2, 3], True),
+    ]
+
+    for case in cases:
+        assert has_negative_cycle(case[0]) == case[3]
+        assert solution(case[0], case[1]) == case[2]
