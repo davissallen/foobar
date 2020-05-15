@@ -107,8 +107,11 @@ def get_shortest_path(times, current_room, exit_room, rooms_unvisited, total_pat
         return min(options)
 
 
-def helper(shortest_paths_to_exit, exit, times, time_remaining, current_room, sets_of_bunnies_saved, bunnies_saved_so_far):
-    """rooms_visited, a set, will also act as the bunny counter with len()."""
+def helper_rec(memory, shortest_paths_to_exit, exit, times, time_remaining, current_room, sets_of_bunnies_saved, bunnies_saved_so_far):
+    if memory[current_room].get(len(bunnies_saved_so_far)) >= time_remaining:
+        return
+    else:
+        memory[current_room][len(bunnies_saved_so_far)] = time_remaining
 
     if any(len(i) == len(times) - 2 for i in sets_of_bunnies_saved):
         return
@@ -123,7 +126,8 @@ def helper(shortest_paths_to_exit, exit, times, time_remaining, current_room, se
                 new_bunnies = bunnies_saved_so_far.copy()
                 if 0 < current_room < len(times) - 1:
                     new_bunnies.add(current_room - 1)
-                helper(
+                helper_rec(
+                    memory,
                     shortest_paths_to_exit,
                     exit,
                     times,
@@ -156,7 +160,9 @@ def solution(times, time_limit):
 
     # explore all possible paths, exiting when it's hopeless.
     bunnies_saved = set()
-    helper(
+    memory = {room: {0: -float('inf')} for room in xrange(len(times))}
+    helper_rec(
+        memory=memory,
         shortest_paths_to_exit=shortest_paths_to_exit,
         exit=len(times) - 1,
         times=times_by_distance,
@@ -256,5 +262,5 @@ def test():
 
 
 if __name__ == '__main__':
-    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=1)
+    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=100)
     print 'total time: {:.2f}ms'.format(time * 1000)
