@@ -62,6 +62,8 @@ solution.solution([[0, 1, 1, 1, 1], [1, 0, 1, 1, 1], [1, 1, 0, 1, 1], [1, 1, 1, 
 Output:
     [0, 1]
 """
+import timeit
+from collections import OrderedDict
 
 
 def has_negative_cycle(graph):
@@ -83,64 +85,176 @@ def has_negative_cycle(graph):
     return False
 
 
-def helper(times, time_remaining, from_room, rooms_visited):
+def get_shortest_path(times, current_room, exit_room, rooms_unvisited, total_path):
+    """seems to work!"""
+    if current_room == exit_room:
+        return total_path
+    elif not rooms_unvisited:
+        return float('inf')
+    else:
+        options = []
+        for next_room in rooms_unvisited:
+            new_unvisited_rooms = [room for room in rooms_unvisited if room != next_room]
+            options.append(
+                get_shortest_path(
+                    times,
+                    next_room,
+                    exit_room,
+                    new_unvisited_rooms,
+                    total_path + times[current_room][next_room]
+                )
+            )
+        return min(options)
+
+
+def helper(shortest_paths_to_exit, exit, times, time_remaining, current_room, sets_of_bunnies_saved, bunnies_saved_so_far):
     """rooms_visited, a set, will also act as the bunny counter with len()."""
-    pass
+
+    if any(len(i) == len(times) - 2 for i in sets_of_bunnies_saved):
+        return
+
+    if current_room == exit:
+        sets_of_bunnies_saved.add(frozenset(sorted(bunnies_saved_so_far)))
+
+    if time_remaining >= shortest_paths_to_exit[current_room]:
+        for next_room, time_cost in times[current_room].iteritems():
+            if next_room != current_room:
+                # make deep copy of set and add current bunny
+                new_bunnies = bunnies_saved_so_far.copy()
+                if 0 < current_room < len(times) - 1:
+                    new_bunnies.add(current_room - 1)
+                helper(
+                    shortest_paths_to_exit,
+                    exit,
+                    times,
+                    time_remaining - time_cost,
+                    next_room,
+                    sets_of_bunnies_saved,
+                    new_bunnies
+                )
 
 
 def solution(times, time_limit):
     """explore all situations"""
 
-    # look for negative cycles.
-    # if there are negative cycles, return all the bunnies.
+    # if there are negative cycles, return all the bunnies, else continue.
     if has_negative_cycle(times):
-        return range(1, len(times) - 1)
-
-    # base case.
-    # if no negative loops and time limit is <= 0, i can get no bunnies.
-    # if there are no negative cycles, continue.
-    if time_limit <= 0:
-        return []
+        return range(len(times) - 2)
 
     # want to know: fastest route to exit for every room.
     # this will help me make my quitting decision... i think.
     # for that I can use the bellman-ford algorithm.
-    pass
+    shortest_paths_to_exit = []
+    for room in xrange(len(times)):
+        shortest_paths_to_exit.append(get_shortest_path(times, room, len(times) - 1, xrange(1, len(times)), 0))
 
-    # explore all possible paths, choosing the next path greedily.
-    pass
+    # create a times list that is sorted by distance.
+    times_by_distance = []
+    for t in times:
+        paths_sorted_by_distance = OrderedDict(sorted({room: distance for room, distance in enumerate(t)}.items(), key=lambda x: x[1]))
+        times_by_distance.append(paths_sorted_by_distance)
+
+    # explore all possible paths, exiting when it's hopeless.
+    bunnies_saved = set()
+    helper(
+        shortest_paths_to_exit=shortest_paths_to_exit,
+        exit=len(times) - 1,
+        times=times_by_distance,
+        time_remaining=time_limit,
+        current_room=0,
+        sets_of_bunnies_saved=bunnies_saved,
+        bunnies_saved_so_far=set()
+    )
+    max_len = 0
+    best_bunnies = []
+    bunnies_saved = [list(i) for i in bunnies_saved]
+    for bunny_set in bunnies_saved:
+        if len(bunny_set) > max_len:
+            best_bunnies = bunny_set
+        elif len(bunny_set) == max_len and sum(bunny_set) < sum(best_bunnies):
+            best_bunnies = bunny_set
+        max_len = max(max_len, len(bunny_set))
+
+    return sorted(best_bunnies)
 
 
 def test():
-    pass
+    cases = [
+        ([
+             [0, 1, 1],
+             [9, 0, 1],
+             [9, 3, 0],
+         ], 1, [], False),
+        ([
+             [0, 1, 1],
+             [9, 0, 1],
+             [9, 3, 0],
+         ], 2, [0], False),
+        ([
+             [0, 1, -1, 1],
+             [9, 0, 2, 1],
+             [9, 1, 0, 1],
+             [9, 3, 2, 0],
+         ], 2, [0, 1], False),
+        ([
+             [0, 2, 2, 2, -1],
+             [9, 0, 2, 2, -1],
+             [9, 3, 0, 2, -1],
+             [9, 3, 2, 0, -1],
+             [9, 3, 2, 2, 0]
+         ], 1, [1, 2], False),
+        ([
+             [0, 1, 1, 1, 1],
+             [1, 0, 1, 1, 1],
+             [1, 1, 0, 1, 1],
+             [1, 1, 1, 0, 1],
+             [1, 1, 1, 1, 0]
+         ], 3, [0, 1], False),
+        ([
+             [0, 1, 1, 1, 1],
+             [1, 0, 1, -5, 1],
+             [1, 1, 0, 1, 1],
+             [1, 1, 1, 0, 1],
+             [1, 1, 1, 1, 0]
+         ], 2, [0, 1, 2], True),
+        ([
+             [0, 2, 2, 2, 1],
+             [9, 0, 4, 4, 100],
+             [9, 3, 0, 2, 1],
+             [9, 3, 2, 0, 100],
+             [9, 3, 2, 2, 0]
+         ], 5, [1, 2], False),
+        ([
+             [0, 2, 2, 1, 1],
+             [9, 0, 2, 2, 100],
+             [9, 3, 0, 2, 1],
+             [9, 3, 2, 0, 100],
+             [9, 3, 2, 2, 0]
+         ], 3, [1], False),
+        ([
+             [0, 1, 1, 1, 1],
+             [1, 0, 1, 1, 1],
+             [1, 1, 0, 1, 1],
+             [1, 1, 1, 0, 1],
+             [1, 1, 1, 1, 0]
+         ], 1, [], False),
+        ([
+             [0, 1, 1, 1, 1],
+             [1, 0, 1, 1, 1],
+             [1, 1, 0, 1, 1],
+             [1, 1, 1, 0, 1],
+             [1, 1, 1, 1, 0]
+         ], 999, [0, 1, 2], False),
+    ]
+
+    for idx, case in enumerate(cases):
+        try:
+            assert has_negative_cycle(case[0]) == case[3]
+            assert solution(case[0], case[1]) == case[2]
+        except AssertionError:
+            print 'Case {} FAILED.'.format(idx)
 
 
 if __name__ == '__main__':
-
-    cases = [
-        ([
-            [0, 2, 2, 2, -1],
-            [9, 0, 2, 2, -1],
-            [9, 3, 0, 2, -1],
-            [9, 3, 2, 0, -1],
-            [9, 3, 2, 2,  0]
-        ], 1, [1, 2], False),
-        ([
-            [0, 1, 1, 1, 1],
-            [1, 0, 1, 1, 1],
-            [1, 1, 0, 1, 1],
-            [1, 1, 1, 0, 1],
-            [1, 1, 1, 1, 0]
-        ], 3, [0, 1], False),
-        ([
-            [0, 1, 1, 1, 1],
-            [1, 0, 1, -5, 1],
-            [1, 1, 0, 1, 1],
-            [1, 1, 1, 0, 1],
-            [1, 1, 1, 1, 0]
-        ], 2, [1, 2, 3], True),
-    ]
-
-    for case in cases:
-        assert has_negative_cycle(case[0]) == case[3]
-        assert solution(case[0], case[1]) == case[2]
+    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=1)
+    print 'total time: {:.2f}ms'.format(time * 1000)
