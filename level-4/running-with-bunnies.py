@@ -108,16 +108,16 @@ def get_shortest_path(times, current_room, exit_room, rooms_unvisited, total_pat
 
 
 def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining, current_room, sets_of_bunnies_saved, bunnies_saved_so_far):
-    if memory[current_room].get(len(bunnies_saved_so_far)) >= time_remaining:
+    if memory[current_room].get(frozenset(bunnies_saved_so_far)) >= time_remaining:
         return
     else:
-        memory[current_room][len(bunnies_saved_so_far)] = time_remaining
+        memory[current_room][frozenset(bunnies_saved_so_far)] = time_remaining
 
     if any(len(i) == len(times) - 2 for i in sets_of_bunnies_saved):
         return
 
     if current_room == exit_room:
-        sets_of_bunnies_saved.add(frozenset(sorted(bunnies_saved_so_far)))
+        sets_of_bunnies_saved.add(frozenset(bunnies_saved_so_far))
 
     if time_remaining >= shortest_paths_to_exit[current_room]:
         for next_room, time_cost in times[current_room].iteritems():
@@ -160,7 +160,7 @@ def solution(times, time_limit):
 
     # explore all possible paths, exiting when it's hopeless.
     bunnies_saved = set()
-    memory = {room: {0: -float('inf')} for room in xrange(len(times))}
+    memory = {room: {frozenset(): -float('inf')} for room in xrange(len(times))}
     helper_rec(
         memory=memory,
         shortest_paths_to_exit=shortest_paths_to_exit,
@@ -186,6 +186,10 @@ def solution(times, time_limit):
 
 def test():
     cases = [
+        ([
+             [0, 1],
+             [9, 0],
+         ], 1, [], False),
         ([
              [0, 1, 1],
              [9, 0, 1],
@@ -321,6 +325,16 @@ def test():
              [9, 3, 2, 2, 2, 0, 9],
              [9, 3, 2, 2, 2, 2, 0]
          ], 9, [0, 1, 2, 3, 4], True),
+        # todo: find a case that breaks...
+        ([
+             [0, 3, 3, 1, 3, 3, 9],
+             [9, 0, 2, 2, 2, 2, 9],
+             [9, 3, 0, 2, 2, 2, 9],
+             [9, 3, 2, 0, 2, 2, 5],
+             [9, 3, 2, 2, 0, 2, 9],
+             [9, 3, 2, 2, 2, 0, 9],
+             [9, 3, 2, 2, 2, 2, 0]
+         ], 9, [2], False),
     ]
 
     for idx, case in enumerate(cases):
