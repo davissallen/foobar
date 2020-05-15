@@ -107,7 +107,7 @@ def get_shortest_path(times, current_room, exit_room, rooms_unvisited, total_pat
         return min(options)
 
 
-def helper_rec(memory, shortest_paths_to_exit, exit, times, time_remaining, current_room, sets_of_bunnies_saved, bunnies_saved_so_far):
+def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining, current_room, sets_of_bunnies_saved, bunnies_saved_so_far):
     if memory[current_room].get(len(bunnies_saved_so_far)) >= time_remaining:
         return
     else:
@@ -116,7 +116,7 @@ def helper_rec(memory, shortest_paths_to_exit, exit, times, time_remaining, curr
     if any(len(i) == len(times) - 2 for i in sets_of_bunnies_saved):
         return
 
-    if current_room == exit:
+    if current_room == exit_room:
         sets_of_bunnies_saved.add(frozenset(sorted(bunnies_saved_so_far)))
 
     if time_remaining >= shortest_paths_to_exit[current_room]:
@@ -124,17 +124,17 @@ def helper_rec(memory, shortest_paths_to_exit, exit, times, time_remaining, curr
             if next_room != current_room:
                 # make deep copy of set and add current bunny
                 new_bunnies = bunnies_saved_so_far.copy()
-                if 0 < current_room < len(times) - 1:
-                    new_bunnies.add(current_room - 1)
+                if 0 < next_room < len(times) - 1:
+                    new_bunnies.add(next_room - 1)
                 helper_rec(
                     memory,
                     shortest_paths_to_exit,
-                    exit,
+                    exit_room,
                     times,
                     time_remaining - time_cost,
                     next_room,
                     sets_of_bunnies_saved,
-                    new_bunnies
+                    new_bunnies,
                 )
 
 
@@ -164,12 +164,12 @@ def solution(times, time_limit):
     helper_rec(
         memory=memory,
         shortest_paths_to_exit=shortest_paths_to_exit,
-        exit=len(times) - 1,
+        exit_room=len(times) - 1,
         times=times_by_distance,
         time_remaining=time_limit,
         current_room=0,
         sets_of_bunnies_saved=bunnies_saved,
-        bunnies_saved_so_far=set()
+        bunnies_saved_so_far=set(),
     )
     max_len = 0
     best_bunnies = []
@@ -191,6 +191,31 @@ def test():
              [9, 0, 1],
              [9, 3, 0],
          ], 1, [], False),
+        ([
+             [0, 1, -1],
+             [9, 0, 1],
+             [9, 3, 0],
+         ], 0, [], False),
+        ([
+             [0, 1, -1],
+             [9, 0, 1],
+             [9, -1, 0],
+         ], 0, [0], False),
+        ([
+             [0, 1, -1],
+             [9, 0, 1],
+             [9, 1, 0],
+         ], 2, [0], False),
+        ([
+             [0, 1, 0],
+             [9, 0, 1],
+             [9, 1, 0],
+         ], 1, [], False),
+        ([
+             [0, 1, -1],
+             [9, 0, 1],
+             [9, 1, 0],
+         ], 1, [0], False),
         ([
              [0, 1, 1],
              [9, 0, 1],
@@ -251,10 +276,56 @@ def test():
              [1, 1, 1, 0, 1],
              [1, 1, 1, 1, 0]
          ], 999, [0, 1, 2], False),
+        ([
+             [0, 2, 2, 1, 2, 2, 1],
+             [9, 0, 2, 2, 2, 2, -100],
+             [9, 3, 0, 2, 2, 2, 1],
+             [9, 3, 2, 0, 2, 2, 100],
+             [9, 3, 0, 2, 2, 2, 1],
+             [9, 3, 2, 0, 2, 2, 100],
+             [9, 3, 2, 2, 2, 2, 0]
+         ], 999, [0, 1, 2, 3, 4], True),
+        ([
+             [0, 2, 2, 1, 2, 2, 9],
+             [9, 0, 2, 2, 2, 2, 9],
+             [9, 3, 0, 2, 2, 2, 9],
+             [9, 1, 2, 0, 2, 2, 5],
+             [9, 3, 0, 2, 0, 2, 9],
+             [9, 3, 2, 2, 2, 0, 9],
+             [9, 3, 2, 2, 2, 2, 0]
+         ], 9, [1, 2, 3], False),
+        ([
+             [0, 3, 3, 1, 3, 3, 9],
+             [9, 0, 2, 2, 2, 2, 9],
+             [9, 3, 0, 2, 2, 2, 9],
+             [9, 3, 2, 0, 2, 2, 5],
+             [9, 3, 2, 2, 0, 2, 9],
+             [9, 3, 2, 2, 2, 0, 9],
+             [9, 3, 2, 2, 2, 2, 0]
+         ], 9, [2], False),
+        ([
+             [0, 3, 3, 1, 3, 3, 9],
+             [9, 0, 2, 2, 2, 2, 9],
+             [9, 3, -1, 2, 2, 2, 9],
+             [9, 3, 2, 0, 2, 2, 5],
+             [9, 3, 2, 2, 0, 2, 9],
+             [9, 3, 2, 2, 2, 0, 9],
+             [9, 3, 2, 2, 2, 2, 0]
+         ], 9, [0, 1, 2, 3, 4], True),
+        ([
+             [-1, 3, 3, 1, 3, 3, 9],
+             [9, 0, 2, 2, 2, 2, 9],
+             [9, 3, 0, 2, 2, 2, 9],
+             [9, 3, 2, 0, 2, 2, 5],
+             [9, 3, 2, 2, 0, 2, 9],
+             [9, 3, 2, 2, 2, 0, 9],
+             [9, 3, 2, 2, 2, 2, 0]
+         ], 9, [0, 1, 2, 3, 4], True),
     ]
 
     for idx, case in enumerate(cases):
         try:
+            # print solution(case[0], case[1])
             assert has_negative_cycle(case[0]) == case[3]
             assert solution(case[0], case[1]) == case[2]
         except AssertionError:
@@ -262,5 +333,5 @@ def test():
 
 
 if __name__ == '__main__':
-    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=100)
+    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=1)
     print 'total time: {:.2f}ms'.format(time * 1000)
