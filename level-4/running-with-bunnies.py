@@ -101,18 +101,11 @@ def get_shortest_path(times, current_room, exit_room, rooms_unvisited, total_pat
         return min(options)
 
 
-def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining, current_room, sets_of_bunnies_saved,
-               bunnies_saved_so_far, path):
+def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining, current_room, bunnies_saved_so_far, path):
     if memory[current_room].get(frozenset(bunnies_saved_so_far)) >= time_remaining:
         return
     else:
         memory[current_room][frozenset(bunnies_saved_so_far)] = time_remaining
-
-    if any(len(i) == len(times) - 2 for i in sets_of_bunnies_saved):
-        return
-
-    if current_room == exit_room:
-        sets_of_bunnies_saved.add(frozenset(bunnies_saved_so_far))
 
     if time_remaining >= shortest_paths_to_exit[current_room]:
         for next_room, time_cost in times[current_room].iteritems():
@@ -130,7 +123,6 @@ def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining,
                     times,
                     time_remaining - time_cost,
                     next_room,
-                    sets_of_bunnies_saved,
                     new_bunnies,
                     new_path,
                 )
@@ -173,13 +165,12 @@ def solution(times, time_limit):
         times=times_by_distance,
         time_remaining=time_limit,
         current_room=0,
-        sets_of_bunnies_saved=bunnies_saved,
         bunnies_saved_so_far=set(),
         path=[0],
     )
     max_len = 0
     best_bunnies = []
-    bunnies_saved = [list(i) for i in bunnies_saved]
+    bunnies_saved = [list(i) for i in memory[len(times) - 1]]
     for bunny_set in bunnies_saved:
         if len(bunny_set) > max_len:
             best_bunnies = bunny_set
@@ -419,12 +410,12 @@ def test():
         try:
             # print solution(case[0], case[1])
             # print has_negative_cycle(case[0]) == case[3]
-            assert has_negative_cycle(case[0]) == case[3]
+            # assert has_negative_cycle(case[0]) == case[3]
             assert solution(case[0], case[1]) == case[2]
         except AssertionError:
             print 'Case {} FAILED.'.format(idx)
 
 
 if __name__ == '__main__':
-    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=1)
+    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=25)
     print 'total time: {:.2f}ms'.format(time * 1000)
