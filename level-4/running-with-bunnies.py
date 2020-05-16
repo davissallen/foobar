@@ -156,7 +156,6 @@ def solution(times, time_limit):
         times_by_distance.append(paths_sorted_by_distance)
 
     # explore all possible paths, exiting when it's hopeless.
-    bunnies_saved = set()
     memory = {room: {frozenset(): -float('inf')} for room in xrange(len(times))}
     helper_rec(
         memory=memory,
