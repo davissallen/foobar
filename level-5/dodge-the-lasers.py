@@ -51,6 +51,7 @@ solution.solution('5')
 Output:
     19
 """
+import timeit
 
 
 def solution_trivial(n):
@@ -62,7 +63,18 @@ def solution_trivial(n):
     return str(result)
 
 
+def solution_trivial_optimized(n):
+    square_root_of_two = 2**0.5
+    return str(sum(int(i * square_root_of_two) for i in xrange(1, int(n) + 1)))
+
+
+def test(func):
+    assert func('5') == '19'
+    assert func('77') == '4208'
+
+
 if __name__ == '__main__':
-    for solution in [solution_trivial]:
-        assert solution('5') == '19'
-        assert solution('77') == '4208'
+    for solution in [solution_trivial, solution_trivial_optimized]:
+        time = timeit.Timer(lambda: test(solution)).timeit(number=10000)
+        print '({}) total time: {:.2f}ms'.format(solution.func_name, time * 1000)
+
