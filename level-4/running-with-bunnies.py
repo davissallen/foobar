@@ -66,21 +66,15 @@ import timeit
 from collections import OrderedDict
 
 
-def has_negative_cycle(graph):
-    d = [float('inf') for _ in xrange(len(graph))]
-    d[0] = 0
-    for i in xrange(len(graph)):
-        flag = False
-        for u in xrange(len(graph)):
-            for v in xrange(len(graph)):
-                if d[u] + graph[u][v] < d[v]:
-                    d[v] = d[u] + graph[u][v]
-                    flag = True
-        if flag:
-            break
-    for u in xrange(len(graph)):
-        for v in xrange(len(graph)):
-            if d[u] + graph[u][v] < d[v]:
+def has_negative_cycle(times):
+    """using the floyd-warshall algorithm"""
+    cost = [i for i in times]
+    for k in xrange(len(times)):
+        for v in xrange(len(times)):
+            for u in xrange(len(times)):
+                if cost[v][k] + cost[k][u] < cost[v][u]:
+                    cost[v][u] = cost[v][k] + cost[k][u]
+            if cost[v][v] < 0:
                 return True
     return False
 
@@ -107,7 +101,8 @@ def get_shortest_path(times, current_room, exit_room, rooms_unvisited, total_pat
         return min(options)
 
 
-def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining, current_room, sets_of_bunnies_saved, bunnies_saved_so_far):
+def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining, current_room, sets_of_bunnies_saved,
+               bunnies_saved_so_far, path):
     if memory[current_room].get(frozenset(bunnies_saved_so_far)) >= time_remaining:
         return
     else:
@@ -124,6 +119,8 @@ def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining,
             if next_room != current_room:
                 # make deep copy of set and add current bunny
                 new_bunnies = bunnies_saved_so_far.copy()
+                new_path = [i for i in path]
+                new_path.append(next_room)
                 if 0 < next_room < len(times) - 1:
                     new_bunnies.add(next_room - 1)
                 helper_rec(
@@ -135,6 +132,7 @@ def helper_rec(memory, shortest_paths_to_exit, exit_room, times, time_remaining,
                     next_room,
                     sets_of_bunnies_saved,
                     new_bunnies,
+                    new_path,
                 )
 
 
@@ -150,12 +148,19 @@ def solution(times, time_limit):
     # for that I can use the bellman-ford algorithm.
     shortest_paths_to_exit = []
     for room in xrange(len(times)):
-        shortest_paths_to_exit.append(get_shortest_path(times, room, len(times) - 1, xrange(1, len(times)), 0))
+        shortest_paths_to_exit.append(get_shortest_path(
+            times=times,
+            current_room=room,
+            exit_room=len(times) - 1,
+            rooms_unvisited=xrange(len(times)),
+            total_path=0
+        ))
 
     # create a times list that is sorted by distance.
     times_by_distance = []
     for t in times:
-        paths_sorted_by_distance = OrderedDict(sorted({room: distance for room, distance in enumerate(t)}.items(), key=lambda x: x[1]))
+        paths_sorted_by_distance = OrderedDict(
+            sorted({room: distance for room, distance in enumerate(t)}.items(), key=lambda x: x[1]))
         times_by_distance.append(paths_sorted_by_distance)
 
     # explore all possible paths, exiting when it's hopeless.
@@ -170,6 +175,7 @@ def solution(times, time_limit):
         current_room=0,
         sets_of_bunnies_saved=bunnies_saved,
         bunnies_saved_so_far=set(),
+        path=[0],
     )
     max_len = 0
     best_bunnies = []
@@ -191,6 +197,10 @@ def test():
              [9, 0],
          ], 1, [], False),
         ([
+             [0, 1],
+             [9, 0],
+         ], 999, [], False),
+        ([
              [0, 1, 1],
              [9, 0, 1],
              [9, 3, 0],
@@ -200,6 +210,11 @@ def test():
              [9, 0, 1],
              [9, 3, 0],
          ], 0, [], False),
+        ([
+             [0, 1, -1],
+             [9, 0, -1],
+             [9, 3, 0],
+         ], 0, [0], False),
         ([
              [0, 1, -1],
              [9, 0, 1],
@@ -325,21 +340,85 @@ def test():
              [9, 3, 2, 2, 2, 0, 9],
              [9, 3, 2, 2, 2, 2, 0]
          ], 9, [0, 1, 2, 3, 4], True),
-        # todo: find a case that breaks...
         ([
-             [0, 3, 3, 1, 3, 3, 9],
-             [9, 0, 2, 2, 2, 2, 9],
-             [9, 3, 0, 2, 2, 2, 9],
-             [9, 3, 2, 0, 2, 2, 5],
-             [9, 3, 2, 2, 0, 2, 9],
-             [9, 3, 2, 2, 2, 0, 9],
-             [9, 3, 2, 2, 2, 2, 0]
-         ], 9, [2], False),
+             [0, -1, -1, -1],
+             [-1, 0, -1, -1],
+             [-1, -1, 0, -1],
+             [-1, -1, -1, 0],
+         ], 9, [0, 1], True),
+        ([
+             [0, 1, 1, 1],
+             [1, 0, 1, 2],
+             [1, 1, 0, 1],
+             [1, 1, 1, 0],
+         ], 2, [1], False),
+        ([
+             [0, 1, 1, 1],
+             [1, 0, 1, 2],
+             [1, 1, 0, 1],
+             [1, 1, 1, 0],
+         ], 2, [1], False),
+        ([
+             [0, 5, 5, 1],
+             [1, 0, 5, 2],
+             [1, 1, 0, 1],
+             [0, 1, 5, 0],
+         ], 4, [0], False),
+        ([
+             [0, 5, 5, 1],
+             [1, 0, 5, 2],
+             [1, 1, 0, 1],
+             [0, 1, 5, 0],
+         ], 10, [0, 1], False),
+        ([
+             [0, 2, 2, 2, -1],
+             [9, 0, 2, 2, -1],
+             [9, 3, 0, 2, -1],
+             [9, 3, 2, 0, -1],
+             [9, 3, 2, 2, 0]
+         ], 1, [1, 2], False),
+        ([
+             [0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0],
+             [0, 0, 0, 0, 0],
+         ], 1, [0, 1, 2], False),
+        ([
+             [0, 10, 10, 1, 10],
+             [10, 0, 10, 10, 1],
+             [10, 1, 0, 10, 10],
+             [10, 10, 1, 0, 10],
+             [1, 10, 10, 10, 0]
+         ], 6, [0, 1, 2], False),
+        ([
+             [0, 5, 11, 11, 1],
+             [10, 0, 1, 5, 1],
+             [10, 1, 0, 4, 0],
+             [10, 1, 5, 0, 1],
+             [10, 10, 10, 10, 0]
+         ], 10, [0, 1], False),
+        ([
+             [0, 10, 10, 10, 1],
+             [0, 0, 10, 10, 10],
+             [0, 10, 0, 10, 10],
+             [0, 10, 10, 0, 10],
+             [1, 1, 1, 1, 0]
+         ], 5, [0, 1], False),
+        ([
+             [0, 5, 11, 11, 1],
+             [10, 0, 1, 5, 1],
+             [10, 1, 0, 4, 0],
+             [10, 1, 5, 0, 1],
+             [10, 10, 10, 10, 0]
+         ], 10, [0, 1], False),
+
     ]
 
     for idx, case in enumerate(cases):
         try:
             # print solution(case[0], case[1])
+            # print has_negative_cycle(case[0]) == case[3]
             assert has_negative_cycle(case[0]) == case[3]
             assert solution(case[0], case[1]) == case[2]
         except AssertionError:
