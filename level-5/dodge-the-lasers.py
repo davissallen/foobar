@@ -3,22 +3,27 @@ Dodge the Lasers!
 =================
 
 Oh no! You've managed to escape Commander Lambdas collapsing space station in an escape pod with the rescued bunny
-prisoners - but Commander Lambda isnt about to let you get away that easily. She's sent her elite fighter pilot squadron
-after you - and they've opened fire!
+prisoners - but Commander Lambda isn't about to let you get away that easily. She's sent her elite fighter pilot
+squadron after you - and they've opened fire!
 
 Fortunately, you know something important about the ships trying to shoot you down. Back when you were still Commander
 Lambdas assistant, she asked you to help program the aiming mechanisms for the starfighters. They undergo rigorous
-testing procedures, but you were still able to slip in a subtle bug. The software works as a time step simulation: if it
-is tracking a target that is accelerating away at 45 degrees, the software will consider the targets acceleration to be
-equal to the square root of 2, adding the calculated result to the targets end velocity at each timestep. However,
-thanks to your bug, instead of storing the result with proper precision, it will be truncated to an integer before
-adding the new velocity to your current position.  This means that instead of having your correct position, the
+testing procedures, but you were still able to slip in a subtle bug.
+
+The software works as a time step simulation:
+
+if it is tracking a target that is accelerating away at 45 degrees, the software will consider the targets acceleration
+to be equal to the square root of 2, adding the calculated result to the targets end velocity at each timestep.
+
+However, thanks to your bug, instead of storing the result with proper precision, it will be truncated to an integer
+before adding the new velocity to your current position. This means that instead of having your correct position, the
 targeting software will erringly report your position as sum(i=1..n, floor(i*sqrt(2))) - not far enough off to fail
 Commander Lambdas testing, but enough that it might just save your life.
 
 If you can quickly calculate the target of the starfighters' laser beams to know how far off they'll be, you can trick
-them into shooting an asteroid, releasing dust, and concealing the rest of your escape.  Write a function
-solution(str_n) which, given the string representation of an integer n, returns the sum of
+them into shooting an asteroid, releasing dust, and concealing the rest of your escape.
+
+Write a function solution(str_n) which, given the string representation of an integer n, returns the sum of
 (floor(1*sqrt(2)) + floor(2*sqrt(2)) + ... + floor(n*sqrt(2))) as a string. That is, for every number i in the range 1
 to n, it adds up all of the integer portions of i*sqrt(2).
 
@@ -48,10 +53,16 @@ Output:
 """
 
 
-def solution(n):
-    pass
+def solution_trivial(n):
+    n = int(n)
+    result = 0
+    square_root_of_two = 2**0.5
+    for i in xrange(1, n + 1):
+        result += int(i * square_root_of_two)
+    return str(result)
 
 
 if __name__ == '__main__':
-    assert solution('77') == '4208'
-    assert solution('5') == '19'
+    for solution in [solution_trivial]:
+        assert solution('5') == '19'
+        assert solution('77') == '4208'
