@@ -409,7 +409,7 @@ def test():
         try:
             # print solution(case[0], case[1])
             # print has_negative_cycle(case[0]) == case[3]
-            # assert has_negative_cycle(case[0]) == case[3]
+            assert has_negative_cycle(case[0]) == case[3]
             assert solution(case[0], case[1]) == case[2]
         except AssertionError:
             print 'Case {} FAILED.'.format(idx)
