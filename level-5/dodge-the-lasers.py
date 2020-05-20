@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 Dodge the Lasers!
 =================
@@ -50,91 +51,48 @@ Input:
 solution.solution('5')
 Output:
     19
-
-t = sqrt(2)
-v(t) = v0t + at
-x(t) = x0 + v0t + (a*t^2)/2
 """
 import timeit
 
-
-def is_close(a, b, rel_tol=1e-09, abs_tol=0.0):
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+import numpy as np
 
 
-def get_actual_distance(time, acceleration):
-    sum_nums_up_to_n = time * (time + 1) / 2
-    return sum_nums_up_to_n * acceleration
-
-
-def get_erringly_reported_distance(time, actual_distance):
-    """i mapped out the actual vs reported distance and found that the difference =~ time / 2"""
-    if time % 2 == 0:
-        # even
-        return long(round(actual_distance)) - long((time // 2))
-    else:
-        # odd
-        return long(actual_distance) - long((time // 2))
+def sum_beatty_sequence(alpha, n):
+    """
+    Sums the Beatty sequence that takes an alpha that meets 1 < alpha < 2.
+    Beatty Sequence: https://oeis.org/A001951
+    Explanation for solution: https://math.stackexchange.com/a/2053713
+    """
+    if n == 0:
+        return 0
+    n1 = np.floor((alpha - 1) * n)
+    p1 = n * n1
+    p2 = n * (n + 1) / 2
+    p3 = n1 * (n1 + 1) / 2
+    p4 = sum_beatty_sequence(alpha, n1)
+    return p1 + p2 - p3 - p4
 
 
 def solution(time_units):
-    time_units = long(time_units)
-    # 1. convert actual distance using longs or custom multiplication
-    actual_distance = get_actual_distance(time_units, 2**0.5)
-    # 2. subtract expected difference distance from actual distance
-    reported_distance = get_erringly_reported_distance(time_units, actual_distance)
-    # 3. return the erringly reported distance
-    return str(reported_distance)
-
-
-def test_get_actual_distance():
-    cases = [
-        (1, 1.414213562),
-        (2, 4.242640687),
-        (14, 148.492424),
-        (26, 496.3889604),
-        (246, 42965.22224),
-        (881, 549451.6675),
-        (10**100, 7.07106781187e+199),
-    ]
-    for case in cases:
-        assert is_close(get_actual_distance(case[0], 2**0.5), case[1])
-
-
-def test_get_erringly_reported_distance():
-    cases = [
-        (1, 1, 1.41421356237310),
-        (2, 3, 4.24264068711929),
-        (3, 7, 8.48528137423857),
-        (4, 12, 14.14213562373100),
-        (5, 19, 21.21320343559640),
-        (6, 27, 29.69848480983500),
-        (7, 36, 39.59797974644670),
-        (8, 47, 50.91168824543140),
-        (9, 59, 63.63961030678930),
-        (10, 73, 77.78174593052020),
-        (11, 88, 93.33809511662430),
-        (12, 104, 110.30865786510100),
-    ]
-    for case in cases:
-        assert is_close(get_erringly_reported_distance(case[0], case[2]), case[1])
+    return str(long(sum_beatty_sequence(np.sqrt(2), long(time_units))))
 
 
 def test():
-    f = open('cases.txt', 'r')
+    f = open('generated_cases.csv', 'r')
     lines = f.readlines()
     fails = 0
-    for case in lines:
-        input, output = case.split()
+    print 'starting checks'
+    for input, output in enumerate(lines):
         answer = None
         try:
-            answer = solution(input)
-            assert answer == output
+            answer = solution(input + 1)
+            assert answer == output[:-1]
         except AssertionError:
             fails += 1
-            print 'case {} failed. got: {}, expected: {}'.format(input, answer, output)
-    print '{:.1f}% failure rate'.format(100.0 * fails / len(lines))
-    print '{:.1f}% success rate'.format(100.0 * (len(lines) - fails) / len(lines))
+            # first case that fails:
+            # case 93222358 failed. got: 6145046469361799, expected: 6145046469361800
+            print 'case {} failed. got: {}, expected: {}'.format(input + 1, answer, output)
+            return
     print '{} cases failed'.format(fails)
 
 
