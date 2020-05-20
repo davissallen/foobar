@@ -67,14 +67,24 @@ def sum_beatty_sequence(alpha, n):
         return 0
     n1 = np.floor((alpha - 1) * n)
     p1 = n * n1
-    p2 = n * (n + 1) / 2
-    p3 = n1 * (n1 + 1) / 2
+    p2 = n * (n + 1) / 2.0
+    p3 = n1 * (n1 + 1) / 2.0
     p4 = sum_beatty_sequence(alpha, n1)
     return p1 + p2 - p3 - p4
 
 
 def solution(time_units):
-    return str(long(sum_beatty_sequence(np.sqrt(2), long(time_units))))
+    time_units = long(time_units)
+    alpha = np.sqrt(2)
+    last_addend = alpha * time_units
+    if float(last_addend).is_integer():
+        # special case where the n-multiple of time_units is a whole number, the algorithm does not work.
+        # so, we must calculate the value for the previous sums and manually add the last.
+        # first case where I noticed this: n=93222358
+        answer = last_addend + sum_beatty_sequence(np.sqrt(2), long(time_units - 1))
+    else:
+        answer = sum_beatty_sequence(np.sqrt(2), float(time_units))
+    return str(long(answer))
 
 
 def test():
@@ -89,10 +99,8 @@ def test():
             assert answer == output[:-1]
         except AssertionError:
             fails += 1
-            # first case that fails:
-            # case 93222358 failed. got: 6145046469361799, expected: 6145046469361800
             print 'case {} failed. got: {}, expected: {}'.format(input + 1, answer, output)
-            return
+            # return
     print '{} cases failed'.format(fails)
 
 
