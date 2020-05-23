@@ -52,12 +52,17 @@ solution.solution('5')
 Output:
     19
 """
-import timeit
+import datetime
+import decimal
+from memo_util import lru_cache
+import time
 
-import numpy as np
+alpha = decimal.Decimal(2).sqrt()
+alpha_minus_one = alpha - 1
 
 
-def sum_beatty_sequence(alpha, n):
+@lru_cache(maxsize=2**15)
+def sum_beatty_sequence(n):
     """
     Sums the Beatty sequence that takes an alpha that meets 1 < alpha < 2.
     Beatty Sequence: https://oeis.org/A001951
@@ -65,45 +70,61 @@ def sum_beatty_sequence(alpha, n):
     """
     if n == 0:
         return 0
-    n1 = np.floor((alpha - 1) * n)
+    n1 = long(decimal.Decimal(alpha_minus_one * n).to_integral_exact(rounding=decimal.ROUND_FLOOR))
     p1 = n * n1
-    p2 = n * (n + 1) / 2.0
-    p3 = n1 * (n1 + 1) / 2.0
-    p4 = sum_beatty_sequence(alpha, n1)
+    p2 = (n * (n + 1)) / 2
+    p3 = (n1 * (n1 + 1)) / 2
+    p4 = sum_beatty_sequence(n1)
     return p1 + p2 - p3 - p4
 
 
 def solution(time_units):
     time_units = long(time_units)
-    alpha = np.sqrt(2)
-    last_addend = alpha * time_units
-    if float(last_addend).is_integer():
-        # special case where the n-multiple of time_units is a whole number, the algorithm does not work.
-        # so, we must calculate the value for the previous sums and manually add the last.
-        # first case where I noticed this: n=93222358
-        answer = last_addend + sum_beatty_sequence(np.sqrt(2), long(time_units - 1))
-    else:
-        answer = sum_beatty_sequence(np.sqrt(2), float(time_units))
+    answer = sum_beatty_sequence(time_units)
     return str(long(answer))
 
 
 def test():
-    f = open('generated_cases.csv', 'r')
-    lines = f.readlines()
-    fails = 0
-    print 'starting checks'
-    for input, output in enumerate(lines):
-        answer = None
+    max_case = 10 ** 9
+    max_case_hundredth = max_case / 100
+    square_root_two = decimal.Decimal(2).sqrt()
+    i = expected = pct = 0
+    actual = None
+    start = time.time()
+    broken_nums = []
+    while i < max_case:
+        # increment values.
+        i += 1
+        expected += (i * square_root_two).to_integral_exact(rounding=decimal.ROUND_FLOOR)
+        # track percentage done
+        if i % max_case_hundredth == 0:
+            pct += 1
+            eta = (((time.time() - start) / pct) * (100 - pct)) / 60.0
+            print '{:3}% complete. ETA: {} minutes.'.format(pct, int(round(eta)))
+        # do check.
         try:
-            answer = solution(input + 1)
-            assert answer == output[:-1]
+            actual = solution(str(i))
+            assert str(expected) == actual
         except AssertionError:
-            fails += 1
-            print 'case {} failed. got: {}, expected: {}'.format(input + 1, answer, output)
-            # return
-    print '{} cases failed'.format(fails)
+            broken_num = (i, expected, actual)
+            broken_nums.append(broken_num)
+            error_msg = '''
+FAIL:
+  input   : {}
+  expected: {}
+  actual  : {}
+'''.format(i, expected, actual)
+            print error_msg
+
+    f = file('results_{}_{}.txt'.format(max_case, datetime.date.today().strftime("%Y-%m-%d")), 'w')
+    if broken_nums:
+        f.write('broken nums:')
+        for case in broken_nums:
+            f.write('input: {}, expected: {}, actual: {}'.format(*case))
+    else:
+        f.write('all cases passed!')
+    f.close()
 
 
 if __name__ == '__main__':
-    time = timeit.timeit(stmt='test()', setup='from __main__ import test', number=1)
-    print 'total time: {:.2f}ms'.format(time * 1000)
+    test()
