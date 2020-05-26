@@ -57,20 +57,28 @@ import decimal
 from memo_util import lru_cache
 import time
 
+# since solution(n) in the worst case is be 200 digits long,
+# we need to use a bigger precision limit for these calculations.
+# 200 should do the trick to cover the largest case.
+decimal.getcontext().prec = 200
+
+# do some pre-computing to avoid wasted processing time.
 alpha = decimal.Decimal(2).sqrt()
 alpha_minus_one = alpha - 1
 
 
-@lru_cache(maxsize=2**15)
+@lru_cache(maxsize=2 ** 15)
 def sum_beatty_sequence(n):
     """
-    Sums the Beatty sequence that takes an alpha that meets 1 < alpha < 2.
-    Beatty Sequence: https://oeis.org/A001951
-    Explanation for solution: https://math.stackexchange.com/a/2053713
+    This question happens to be a known sequence known as the Beatty sequence.
+    Beatty Sequence (ref): https://oeis.org/A001951
+
+    This solution simply sums the Beatty sequence using a recusive algorithm.
+    Explanation for algorithm: https://math.stackexchange.com/a/2053713
     """
     if n == 0:
         return 0
-    n1 = long(decimal.Decimal(alpha_minus_one * n).to_integral_exact(rounding=decimal.ROUND_FLOOR))
+    n1 = decimal.Decimal(alpha_minus_one * n).to_integral_exact(rounding=decimal.ROUND_FLOOR)
     p1 = n * n1
     p2 = (n * (n + 1)) / 2
     p3 = (n1 * (n1 + 1)) / 2
@@ -79,28 +87,22 @@ def sum_beatty_sequence(n):
 
 
 def solution(time_units):
-    time_units = long(time_units)
-    answer = sum_beatty_sequence(time_units)
+    answer = sum_beatty_sequence(long(time_units))
     return str(long(answer))
 
 
 def test():
-    max_case = 10 ** 9
+    max_case = 10 ** 100
     max_case_hundredth = max_case / 100
     square_root_two = decimal.Decimal(2).sqrt()
-    i = expected = pct = 0
+    pct = 0
+    i = max_case
+    expected = long(solution(str(i)))
     actual = None
     start = time.time()
     broken_nums = []
-    while i < max_case:
-        # increment values.
-        i += 1
-        expected += (i * square_root_two).to_integral_exact(rounding=decimal.ROUND_FLOOR)
-        # track percentage done
-        if i % max_case_hundredth == 0:
-            pct += 1
-            eta = (((time.time() - start) / pct) * (100 - pct)) / 60.0
-            print '{:3}% complete. ETA: {} minutes.'.format(pct, int(round(eta)))
+    while i >= 0:
+
         # do check.
         try:
             actual = solution(str(i))
@@ -115,6 +117,20 @@ FAIL:
   actual  : {}
 '''.format(i, expected, actual)
             print error_msg
+            return
+
+        # calculate new expected value.
+        last_root_two_value = (i * square_root_two).to_integral_exact(rounding=decimal.ROUND_FLOOR)
+        expected -= long(last_root_two_value)
+
+        # decrement values.
+        i -= 1
+
+        # track percentage done
+        if i % max_case_hundredth == 0:
+            pct += 1
+            eta = (((time.time() - start) / pct) * (100 - pct)) / 60.0
+            print '{:3}% complete. ETA: {} minutes.'.format(pct, int(round(eta)))
 
     f = file('results_{}_{}.txt'.format(max_case, datetime.date.today().strftime("%Y-%m-%d")), 'w')
     if broken_nums:
@@ -127,4 +143,6 @@ FAIL:
 
 
 if __name__ == '__main__':
+    assert solution(str(
+        10 ** 100)) == '70710678118654752440084436210484903928483593768847403658833986899536623923105351942519376716382078638821760123411090095254685423841027253480565451739737157454059823250037671948325191776995310741236436'
     test()
